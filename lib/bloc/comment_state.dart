@@ -45,50 +45,47 @@ class CommentLoaded extends CommentState {
   }
 
 // =========================================================================
-  // THUẬT TOÁN LÀM PHẲNG CÂY (FIX: ĐỘC LẬP TỪNG TẦNG - MỖI TẦNG 1 NÚT RIÊNG BIỆT)
+  // THUẬT TOÁN LÀM PHẲNG CÂY (FIX: CHỈ HIỆN THU GỌN KHI > 3 CON HOẶC QUÁ SÂU)
   // =========================================================================
   List<CommentNode> get flattenedComments {
     List<CommentNode> result = [];
     
-    // Xóa bỏ hoàn toàn chế độ Bubble-up và forceExpand để các tầng không dính líu đến nhau
     void traverse(String? parentId, int depth) {
       final children = comments.where((c) => c.parentId == parentId).toList();
       if (children.isEmpty) return; 
       
       String nodeKey = parentId ?? 'root';
-      
-      // Chỉ kiểm tra đúng ID của tầng này, không ép con cháu phải mở theo
       bool isExpanded = expandedParentIds.contains(nodeKey);
       
       int displayCount = children.length;
       bool isTruncated = false;
       int hiddenCount = 0;
 
-      // ÁP DỤNG LUẬT GIỚI HẠN (Nếu tầng NÀY chưa được bấm mở rộng)
+      // 1. LUẬT KIỂM TRA ĐỂ GIẤU BỚT BÌNH LUẬN (Nếu chưa bấm mở rộng)
       if (!isExpanded) {
-        if (parentId != null && depth >= 4) {
-          // Vượt quá độ sâu (Tầng 4 trở đi) -> Giấu hết con
+        if (parentId != null && depth >= 3) { 
+          // Giới hạn tầng: Từ tầng 3 trở đi sẽ bị giấu sạch
           displayCount = 0;
           isTruncated = true;
           hiddenCount = children.length;
         } else if (children.length > 3) {
-          // Dài quá 3 bình luận -> Chỉ hiện 3
+          // Giới hạn số lượng: Đông hơn 3 đứa thì chỉ hiện 3 đứa đầu
           displayCount = 3;
           isTruncated = true;
           hiddenCount = children.length - 3; 
         }
       }
 
-      // VẼ BÌNH LUẬN CON
+      // 2. VẼ DANH SÁCH BÌNH LUẬN 
       for (int i = 0; i < displayCount; i++) {
         final child = children[i];
         result.add(CommentNode(comment: child, depth: depth));
         
-        // Gọi đệ quy: Mỗi thằng con sẽ tự quản lý nhánh của nó hoàn toàn độc lập
+        // Mỗi nhánh con tự quản lý độc lập
         traverse(child.id, depth + 1); 
       }
 
-      // VẼ NÚT XEM THÊM (CỦA RIÊNG TẦNG NÀY)
+      // 3. VẼ NÚT XEM THÊM (Của riêng tầng này)
       if (isTruncated) {
         result.add(CommentNode(
           comment: Comment(id: 'view_more_$nodeKey', author: '', text: ''),
@@ -98,12 +95,13 @@ class CommentLoaded extends CommentState {
           targetParentId: parentId,
         ));
       } 
-      // VẼ NÚT THU GỌN (CỦA RIÊNG TẦNG NÀY)
+      // 4. VẼ NÚT THU GỌN (Của riêng tầng này)
       else if (isExpanded) {
-        // Chỉ vẽ nút Thu Gọn nếu bản thân nhánh này LÚC BÌNH THƯỜNG bị quá tải
-        bool needsCollapseButton = (parentId != null && depth >= 4) || (children.length > 3);
+        // ĐIỀU KIỆN QUYẾT ĐỊNH: 
+        // Nút Thu gọn CHỈ hiện ra nếu số lượng con > 3 HOẶC nhánh này nằm ở tầng bị giới hạn
+        bool needsCollapse = (children.length > 3) || (parentId != null && depth >= 3);
         
-        if (needsCollapseButton) {
+        if (needsCollapse) {
           result.add(CommentNode(
             comment: Comment(id: 'collapse_$nodeKey', author: '', text: ''),
             depth: depth,
