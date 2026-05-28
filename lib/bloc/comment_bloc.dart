@@ -104,32 +104,50 @@ void _onExpandComment(ExpandComment event, Emitter<CommentState> emit) {
     }
   }
 
-  void _onAddComment(AddComment event, Emitter<CommentState> emit) {
+void _onAddComment(AddComment event, Emitter<CommentState> emit) {
     final currentState = state;
     if (currentState is CommentLoaded && currentState.currentUser != null) {
+      
+      String? rootId;
+      String finalText = event.text;
+
+      // KIỂM TRA XEM ĐANG TRẢ LỜI AI
+      if (currentState.replyingTo != null) {
+        final target = currentState.replyingTo!;
+        
+        // MỚI: BẤT KỂ LÀ TRẢ LỜI GỐC HAY CON, ĐỀU GẮN HASHTAG @TÊN VÀO ĐẦU CÂU
+        finalText = '@${target.author} $finalText'; 
+
+        if (target.parentId == null) {
+          // Trả lời Bình luận Gốc -> Nhận thằng Gốc này làm cha
+          rootId = target.id;
+        } else {
+          // Trả lời Bình luận Con -> Ép về ngang hàng (nhận cha của thằng con làm cha)
+          rootId = target.parentId;
+        }
+      }
+
       final newComment = Comment(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         author: currentState.currentUser!,
-        text: event.text,
-        parentId: currentState.replyingTo?.id,
+        text: finalText,
+        parentId: rootId, 
       );
 
       final updatedComments = List<Comment>.from(currentState.comments)..add(newComment);
       
+      // Tự động mở rộng nhánh khi vừa bình luận
       final newExpanded = Set<String>.from(currentState.expandedParentIds);
-      if (currentState.replyingTo != null) {
-        newExpanded.add(currentState.replyingTo!.id);
-      }
+      if (rootId != null) newExpanded.add(rootId);
 
       emit(currentState.copyWith(
-        comments: updatedComments, 
+        comments: updatedComments,
+        clearReply: true,
+        clearMessage: true,
         expandedParentIds: newExpanded,
-        clearReply: true, 
-        clearMessage: true
       ));
     }
   }
-
   void _onSetReplyTarget(SetReplyTarget event, Emitter<CommentState> emit) {
     final currentState = state;
     if (currentState is CommentLoaded) {
