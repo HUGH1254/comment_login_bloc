@@ -179,43 +179,36 @@ class _NestedCommentsScreenState extends State<NestedCommentsScreen> {
                       itemCount: treeList.length,
                       itemBuilder: (context, index) {
                         final node = treeList[index];
-                        
-                        // 1. Nếu là Node Xem Thêm
+                       // 1. Nếu là Node Xem Thêm
                         if (node.isViewMore) {
                           return Padding(
                             padding: EdgeInsets.only(left: node.depth * 24.0 + 16.0, top: 4, bottom: 12),
                             child: Align(
                               alignment: Alignment.centerLeft,
                               child: InkWell(
-                                onTap: () => context.read<CommentBloc>().add(ExpandComment(node.targetParentId!)),
+                                // XÓA DẤU ! Ở ĐÂY
+                                onTap: () => context.read<CommentBloc>().add(ExpandComment(node.targetParentId)),
                                 child: Text(
                                   '↪ Xem thêm ${node.hiddenCount} bình luận',
-                                  style: const TextStyle(
-                                    color: Colors.blue, 
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
+                                  style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 14),
                                 ),
                               ),
                             ),
                           );
                         }
                         
-                        // 2. MỚI: Nếu là Node Thu Gọn
+                        // 2. Nếu là Node Thu Gọn
                         if (node.isCollapse) {
                           return Padding(
                             padding: EdgeInsets.only(left: node.depth * 24.0 + 16.0, top: 4, bottom: 12),
                             child: Align(
                               alignment: Alignment.centerLeft,
                               child: InkWell(
-                                onTap: () => context.read<CommentBloc>().add(CollapseComment(node.targetParentId!)),
+                                // XÓA DẤU ! Ở ĐÂY
+                                onTap: () => context.read<CommentBloc>().add(CollapseComment(node.targetParentId)),
                                 child: const Text(
                                   '↶ Thu gọn',
-                                  style: TextStyle(
-                                    color: Colors.grey, 
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
+                                  style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 14),
                                 ),
                               ),
                             ),

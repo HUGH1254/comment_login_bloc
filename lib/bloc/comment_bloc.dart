@@ -33,24 +33,33 @@ class CommentBloc extends Bloc<CommentEvent, CommentState> {
     ];
     emit(CommentLoaded(comments: initialComments));
   }
-
-  void _onExpandComment(ExpandComment event, Emitter<CommentState> emit) {
+void _onExpandComment(ExpandComment event, Emitter<CommentState> emit) {
     final currentState = state;
     if (currentState is CommentLoaded) {
-      final newExpanded = Set<String>.from(currentState.expandedParentIds)..add(event.parentId);
+      // Nếu parentId là null (Bình luận gốc), dùng chữ 'root' để thay thế
+      final key = event.parentId ?? 'root';
+      final newExpanded = Set<String>.from(currentState.expandedParentIds)..add(key);
       emit(currentState.copyWith(expandedParentIds: newExpanded, clearMessage: true));
     }
   }
 
-  // MỚI: Xóa ID khỏi danh sách để thu gọn lại
   void _onCollapseComment(CollapseComment event, Emitter<CommentState> emit) {
     final currentState = state;
     if (currentState is CommentLoaded) {
-      final newExpanded = Set<String>.from(currentState.expandedParentIds)..remove(event.parentId);
+      final newExpanded = Set<String>.from(currentState.expandedParentIds);
+
+      void removeDescendants(String? id) {
+        newExpanded.remove(id ?? 'root'); 
+        final children = currentState.comments.where((c) => c.parentId == id);
+        for (var child in children) {
+          removeDescendants(child.id);
+        }
+      }
+
+      removeDescendants(event.parentId);
       emit(currentState.copyWith(expandedParentIds: newExpanded, clearMessage: true));
     }
   }
-
   void _onLogin(LoginRequested event, Emitter<CommentState> emit) {
     final currentState = state;
     if (currentState is CommentLoaded) {

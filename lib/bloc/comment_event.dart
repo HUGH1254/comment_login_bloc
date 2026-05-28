@@ -34,12 +34,11 @@ class RegisterRequested extends CommentEvent {
 class LogoutRequested extends CommentEvent {}
 
 class ExpandComment extends CommentEvent {
-  final String parentId;
+  final String? parentId;
   ExpandComment(this.parentId);
 }
 
-// MỚI: Sự kiện thu gọn bình luận
 class CollapseComment extends CommentEvent {
-  final String parentId;
+  final String? parentId;
   CollapseComment(this.parentId);
 }
